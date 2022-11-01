@@ -1,0 +1,5 @@
+node_modules
+.env
+google_api.json
+package-lock.json
+helper.sh
