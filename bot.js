@@ -27,46 +27,50 @@ client.on(Events.ClientReady, () => {
 });
 
 client.on(Events.MessageReactionAdd, async (reaction, user) => {
-	// When a reaction is received, check if the structure is partial
-	if (reaction.partial) {
-		// If the message this reaction belongs to was removed, the fetching might result in an API error which should be handled
-		try {
-			await reaction.fetch();
-		} catch (error) {
-			console.error('Something went wrong when fetching the message:', error);
-			// Return as `reaction.message.author` may be undefined/null
-			return;
-		}
-	}
-
-	let flagEmoji = reaction.emoji.name;
-	let messageText = reaction.message.content;
-	let flagObject = Flags.getFlagObject(flagEmoji);
-	let flagCode = flagObject.code;
-
 	try {
-		if (flagCode != null) {
-			// flag code has been founded
-			let finalTranslation = await getTranslation(messageText, flagCode);
-			let embedMessage = getEmbed(
-				finalTranslation,
-				user.username,
-				user.displayAvatarURL(),
-				flagCode
-			);
-			reaction.message.reply({ embeds: [embedMessage] });
+		// When a reaction is received, check if the structure is partial
+		if (reaction.partial) {
+			// If the message this reaction belongs to was removed, the fetching might result in an API error which should be handled
+			try {
+				await reaction.fetch();
+
+				if (reaction.count == 1) {
+					let flagEmoji = reaction.emoji.name;
+					let messageText = reaction.message.content;
+					let flagObject = Flags.getFlagObject(flagEmoji);
+					let flagCode = flagObject.code;
+
+					try {
+						if (flagCode != null) {
+							// flag code has been founded
+							let finalTranslation = await getTranslation(
+								messageText,
+								flagCode
+							);
+							let embedMessage = getEmbed(
+								finalTranslation,
+								user.username,
+								user.displayAvatarURL(),
+								flagCode
+							);
+							reaction.message.reply({
+								embeds: [embedMessage],
+								allowedMentions: {
+									repliedUser: false,
+								},
+							});
+						}
+					} catch (e) {
+						handleFlagError(e);
+					}
+				}
+			} catch (e) {
+				console.log(e);
+			}
 		}
 	} catch (e) {
-		let error = 'Error with flag code : ' + flagCode + ', ' + e;
-		console.log(error);
-		kieceUser.send(error);
-
-		let embedMessageError = getEmbedError(
-			user.username,
-			user.displayAvatarURL(),
-			flagCode
-		);
-		reaction.message.reply({ embeds: [embedMessageError] });
+		console.log(e);
+		kieceUser.send(e);
 	}
 });
 
@@ -106,7 +110,7 @@ function getEmbed(
 	};
 }
 
-function getEmbedError(authorName, authorIconURL, translationOrigin) {
+function getEmbedError(authorName, authorIconURL) {
 	return {
 		color: 14687012,
 		description:
@@ -123,4 +127,13 @@ function getEmbedError(authorName, authorIconURL, translationOrigin) {
 		},
 		fields: [],
 	};
+}
+
+function handleFlagError(e) {
+	let error = 'Error with flag code : ' + flagCode + ', ' + e;
+	console.log(error);
+	kieceUser.send(error);
+
+	let embedMessageError = getEmbedError(user.username, user.displayAvatarURL());
+	reaction.message.reply({ embeds: [embedMessageError] });
 }

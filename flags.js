@@ -979,7 +979,7 @@ const flagsList = [
 	},
 	{
 		name: 'Japan',
-		code: 'JP',
+		code: 'JA',
 		emoji: '🇯🇵',
 		unicode: 'U+1F1EF U+1F1F5',
 		image:
@@ -1043,7 +1043,7 @@ const flagsList = [
 	},
 	{
 		name: 'South Korea',
-		code: 'KR',
+		code: 'KO',
 		emoji: '🇰🇷',
 		unicode: 'U+1F1F0 U+1F1F7',
 		image:
