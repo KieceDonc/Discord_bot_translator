@@ -7,13 +7,15 @@ module.exports = {
 			while (!founded) {
 				flagObject = flagsList[index];
 
-				founded = flagObject.emoji == emoji;
-				if (founded) {
-					return flagObject;
-				}
+				if (flagObject != null) {
+					founded = flagObject.emoji == emoji;
+					if (founded) {
+						return flagObject;
+					}
 
-				if (index > 260) {
-					founded = true;
+					if (index > 260) {
+						founded = true;
+					}
 				}
 
 				index++;

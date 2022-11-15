@@ -32,41 +32,14 @@ client.on(Events.MessageReactionAdd, async (reaction, user) => {
 		if (reaction.partial) {
 			// If the message this reaction belongs to was removed, the fetching might result in an API error which should be handled
 			try {
-				await reaction.fetch();
-
-				if (reaction.count == 1) {
-					let flagEmoji = reaction.emoji.name;
-					let messageText = reaction.message.content;
-					let flagObject = Flags.getFlagObject(flagEmoji);
-					let flagCode = flagObject.code;
-
-					try {
-						if (flagCode != null) {
-							// flag code has been founded
-							let finalTranslation = await getTranslation(
-								messageText,
-								flagCode
-							);
-							let embedMessage = getEmbed(
-								finalTranslation,
-								user.username,
-								user.displayAvatarURL(),
-								flagCode
-							);
-							reaction.message.reply({
-								embeds: [embedMessage],
-								allowedMentions: {
-									repliedUser: false,
-								},
-							});
-						}
-					} catch (e) {
-						handleFlagError(e);
-					}
-				}
+				await reaction.fetch().then((fullReaction) => {
+					mainJob(reaction, user);
+				});
 			} catch (e) {
 				console.log(e);
 			}
+		} else {
+			mainJob(reaction, user);
 		}
 	} catch (e) {
 		console.log(e);
@@ -75,6 +48,35 @@ client.on(Events.MessageReactionAdd, async (reaction, user) => {
 });
 
 client.login(process.env.TOKEN);
+
+async function mainJob(reaction, user) {
+	if (reaction.count == 1) {
+		let flagEmoji = reaction.emoji.name;
+		let messageText = reaction.message.content;
+		let flagObject = Flags.getFlagObject(flagEmoji);
+		let flagCode = flagObject.code;
+		try {
+			if (flagCode != null) {
+				// flag code has been founded
+				let finalTranslation = await getTranslation(messageText, flagCode);
+				let embedMessage = getEmbed(
+					finalTranslation,
+					user.username,
+					user.displayAvatarURL(),
+					flagCode
+				);
+				reaction.message.reply({
+					embeds: [embedMessage],
+					allowedMentions: {
+						repliedUser: false,
+					},
+				});
+			}
+		} catch (e) {
+			handleFlagError(e);
+		}
+	}
+}
 
 async function getTranslation(messageText, flagCode) {
 	let [translations] = await translate.translate(messageText, flagCode);
@@ -104,7 +106,7 @@ function getEmbed(
 		image: {},
 		thumbnail: {},
 		footer: {
-			text: 'From ' + translationOrigin,
+			text: 'From ' + translationOrigin + ' • Request by ' + authorName,
 		},
 		fields: [],
 	};
